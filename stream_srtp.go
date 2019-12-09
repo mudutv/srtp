@@ -6,6 +6,7 @@ import (
 
 	"github.com/pion/rtp"
 	"github.com/pion/transport/packetio"
+	"context"
 )
 
 // Limit the buffer size to 1MB
@@ -67,6 +68,11 @@ func (r *ReadStreamSRTP) write(buf []byte) (n int, err error) {
 // Read reads and decrypts full RTP packet from the nextConn
 func (r *ReadStreamSRTP) Read(buf []byte) (int, error) {
 	return r.buffer.Read(buf)
+}
+
+// Read reads and decrypts full RTP packet from the nextConn
+func (r *ReadStreamSRTP) ReadContext(buf []byte,ctx context.Context) (int, error) {
+	return r.buffer.ReadContext(buf,ctx)
 }
 
 // ReadRTP reads and decrypts full RTP packet and its header from the nextConn

@@ -6,6 +6,7 @@ import (
 
 	"github.com/pion/rtcp"
 	"github.com/pion/transport/packetio"
+	"context"
 )
 
 // Limit the buffer size to 100KB
@@ -52,6 +53,18 @@ func (r *ReadStreamSRTCP) ReadRTCP(buf []byte) (int, *rtcp.Header, error) {
 // Read reads and decrypts full RTCP packet from the nextConn
 func (r *ReadStreamSRTCP) Read(b []byte) (int, error) {
 	n, err := r.buffer.Read(b)
+
+	if err == packetio.ErrFull {
+		// Silently drop data when the buffer is full.
+		return len(b), nil
+	}
+
+	return n, err
+}
+
+// Read reads and decrypts full RTCP packet from the nextConn
+func (r *ReadStreamSRTCP) ReadContext(b []byte, ctx context.Context) (int, error) {
+	n, err := r.buffer.ReadContext(b,ctx)
 
 	if err == packetio.ErrFull {
 		// Silently drop data when the buffer is full.
