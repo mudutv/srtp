@@ -70,7 +70,7 @@ func (r *ReadStreamSRTP) Read(buf []byte) (int, error) {
 	return r.buffer.Read(buf)
 }
 
-// Read reads and decrypts full RTP packet from the nextConn
+// miaobinwei
 func (r *ReadStreamSRTP) ReadContext(buf []byte,ctx context.Context) (int, error) {
 	return r.buffer.ReadContext(buf,ctx)
 }
@@ -113,7 +113,6 @@ func (r *ReadStreamSRTP) Close() error {
 		r.session.removeReadStream(r.ssrc)
 		return nil
 	}
-
 }
 
 // GetSSRC returns the SSRC we are demuxing for

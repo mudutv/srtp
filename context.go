@@ -8,6 +8,8 @@ import (
 	"encoding/binary"
 	"fmt"
 	"hash"
+
+	"github.com/mudutv/transport/replaydetector"
 )
 
 // ProtectionProfile specifies Cipher and AuthTag details, similar to TLS cipher suite
@@ -37,38 +39,56 @@ const (
 	srtcpIndexSize = 4
 )
 
-// Encode/Decode state for a single SSRC
-type ssrcState struct {
+// Encrypt/Decrypt state for a single SRTP SSRC
+type srtpSSRCState struct {
 	ssrc                 uint32
 	rolloverCounter      uint32
 	rolloverHasProcessed bool
 	lastSequenceNumber   uint16
+	replayDetector       replaydetector.ReplayDetector
 }
 
-// Context represents a SRTP cryptographic context
-// Context can only be used for one-way operations
-// it must either used ONLY for encryption or ONLY for decryption
+// Encrypt/Decrypt state for a single SRTCP SSRC
+type srtcpSSRCState struct {
+	srtcpIndex     uint32
+	ssrc           uint32
+	replayDetector replaydetector.ReplayDetector
+}
+
+// Context represents a SRTP cryptographic context.
+// Context can only be used for one-way operations.
+// it must either used ONLY for encryption or ONLY for decryption.
 type Context struct {
 	masterKey  []byte
 	masterSalt []byte
 
-	ssrcStates         map[uint32]*ssrcState
+	srtpSSRCStates     map[uint32]*srtpSSRCState
 	srtpSessionKey     []byte
 	srtpSessionSalt    []byte
 	srtpSessionAuth    hash.Hash
 	srtpSessionAuthTag []byte
 	srtpBlock          cipher.Block
 
+	srtcpSSRCStates     map[uint32]*srtcpSSRCState
 	srtcpSessionKey     []byte
 	srtcpSessionSalt    []byte
 	srtcpSessionAuth    hash.Hash
 	srtcpSessionAuthTag []byte
-	srtcpIndex          uint32
 	srtcpBlock          cipher.Block
+
+	newSRTCPReplayDetector func() replaydetector.ReplayDetector
+	newSRTPReplayDetector  func() replaydetector.ReplayDetector
 }
 
-// CreateContext creates a new SRTP Context
-func CreateContext(masterKey, masterSalt []byte, profile ProtectionProfile) (c *Context, err error) {
+// CreateContext creates a new SRTP Context.
+//
+// CreateContext receives variable number of ContextOption-s.
+// Passing multiple options which set the same parameter let the last one valid.
+// Following example create SRTP Context with replay protection with window size of 256.
+//
+//   decCtx, err := srtp.CreateContext(key, salt, profile, srtp.SRTPReplayProtection(256))
+//
+func CreateContext(masterKey, masterSalt []byte, profile ProtectionProfile, opts ...ContextOption) (c *Context, err error) {
 	if masterKeyLen := len(masterKey); masterKeyLen != keyLen {
 		return c, fmt.Errorf("SRTP Master Key must be len %d, got %d", masterKey, keyLen)
 	} else if masterSaltLen := len(masterSalt); masterSaltLen != saltLen {
@@ -76,9 +96,21 @@ func CreateContext(masterKey, masterSalt []byte, profile ProtectionProfile) (c *
 	}
 
 	c = &Context{
-		masterKey:  masterKey,
-		masterSalt: masterSalt,
-		ssrcStates: map[uint32]*ssrcState{},
+		masterKey:       masterKey,
+		masterSalt:      masterSalt,
+		srtpSSRCStates:  map[uint32]*srtpSSRCState{},
+		srtcpSSRCStates: map[uint32]*srtcpSSRCState{},
+	}
+	for _, o := range append(
+		[]ContextOption{ // Default options
+			SRTPNoReplayProtection(),
+			SRTCPNoReplayProtection(),
+		},
+		opts..., // User specified options
+	) {
+		if errOpt := o(c); errOpt != nil {
+			return nil, errOpt
+		}
 	}
 
 	if c.srtpSessionKey, err = c.generateSessionKey(labelSRTPEncryption); err != nil {
@@ -261,11 +293,10 @@ func (c *Context) generateSrtcpAuthTag(buf []byte) ([]byte, error) {
 }
 
 // https://tools.ietf.org/html/rfc3550#appendix-A.1
-func (c *Context) updateRolloverCount(sequenceNumber uint16, s *ssrcState) {
+func (c *Context) updateRolloverCount(sequenceNumber uint16, s *srtpSSRCState) {
 	if !s.rolloverHasProcessed {
 		s.rolloverHasProcessed = true
 	} else if sequenceNumber == 0 { // We exactly hit the rollover count
-
 		// Only update rolloverCounter if lastSequenceNumber is greater then maxROCDisorder
 		// otherwise we already incremented for disorder
 		if s.lastSequenceNumber > maxROCDisorder {
@@ -283,13 +314,30 @@ func (c *Context) updateRolloverCount(sequenceNumber uint16, s *ssrcState) {
 	s.lastSequenceNumber = sequenceNumber
 }
 
-func (c *Context) getSSRCState(ssrc uint32) *ssrcState {
-	s, ok := c.ssrcStates[ssrc]
+func (c *Context) getSRTPSSRCState(ssrc uint32) *srtpSSRCState {
+	s, ok := c.srtpSSRCStates[ssrc]
 	if ok {
 		return s
 	}
 
-	s = &ssrcState{ssrc: ssrc}
-	c.ssrcStates[ssrc] = s
+	s = &srtpSSRCState{
+		ssrc:           ssrc,
+		replayDetector: c.newSRTPReplayDetector(),
+	}
+	c.srtpSSRCStates[ssrc] = s
+	return s
+}
+
+func (c *Context) getSRTCPSSRCState(ssrc uint32) *srtcpSSRCState {
+	s, ok := c.srtcpSSRCStates[ssrc]
+	if ok {
+		return s
+	}
+
+	s = &srtcpSSRCState{
+		ssrc:           ssrc,
+		replayDetector: c.newSRTCPReplayDetector(),
+	}
+	c.srtcpSSRCStates[ssrc] = s
 	return s
 }

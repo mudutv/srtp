@@ -26,7 +26,14 @@ type ReadStreamSRTCP struct {
 }
 
 func (r *ReadStreamSRTCP) write(buf []byte) (n int, err error) {
-	return r.buffer.Write(buf)
+	n, err = r.buffer.Write(buf)
+
+	if err == packetio.ErrFull {
+		// Silently drop data when the buffer is full.
+		return len(buf), nil
+	}
+
+	return n, err
 }
 
 // Used by getOrCreateReadStream
@@ -51,18 +58,17 @@ func (r *ReadStreamSRTCP) ReadRTCP(buf []byte) (int, *rtcp.Header, error) {
 }
 
 // Read reads and decrypts full RTCP packet from the nextConn
-func (r *ReadStreamSRTCP) Read(b []byte) (int, error) {
-	n, err := r.buffer.Read(b)
-
+func (r *ReadStreamSRTCP) Read(buf []byte) (int, error) {
+	n, err := r.buffer.Read(buf)
 	if err == packetio.ErrFull {
 		// Silently drop data when the buffer is full.
-		return len(b), nil
+		return len(buf), nil
 	}
 
 	return n, err
 }
 
-// Read reads and decrypts full RTCP packet from the nextConn
+// miaobinwei
 func (r *ReadStreamSRTCP) ReadContext(b []byte, ctx context.Context) (int, error) {
 	n, err := r.buffer.ReadContext(b,ctx)
 

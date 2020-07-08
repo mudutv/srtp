@@ -1,3 +1,4 @@
+// Package srtp implements Secure Real-time Transport Protocol
 package srtp
 
 import (
@@ -8,10 +9,16 @@ import (
 	"github.com/mudutv/rtp"
 )
 
-func (c *Context) decryptRTP(dst []byte, ciphertext []byte, header *rtp.Header) ([]byte, error) {
+func (c *Context) decryptRTP(dst, ciphertext []byte, header *rtp.Header) ([]byte, error) {
+	s := c.getSRTPSSRCState(header.SSRC)
+
+	markAsValid, ok := s.replayDetector.Check(uint64(header.SequenceNumber))
+	if !ok {
+		return nil, errDuplicated
+	}
+
 	dst = growBufferSize(dst, len(ciphertext)-authTagSize)
 
-	s := c.getSSRCState(header.SSRC)
 	c.updateRolloverCount(header.SequenceNumber, s)
 
 	// Split the auth tag and the cipher text into two parts.
@@ -29,6 +36,7 @@ func (c *Context) decryptRTP(dst []byte, ciphertext []byte, header *rtp.Header) 
 	if subtle.ConstantTimeCompare(actualTag, expectedTag) != 1 {
 		return nil, fmt.Errorf("failed to verify auth tag")
 	}
+	markAsValid()
 
 	// Write the plaintext header to the destination buffer.
 	copy(dst, ciphertext[:header.PayloadOffset])
@@ -78,7 +86,7 @@ func (c *Context) encryptRTP(dst []byte, header *rtp.Header, payload []byte) (ci
 	// authTag = 10 bytes
 	dst = growBufferSize(dst, header.MarshalSize()+len(payload)+10)
 
-	s := c.getSSRCState(header.SSRC)
+	s := c.getSRTPSSRCState(header.SSRC)
 	c.updateRolloverCount(header.SequenceNumber, s)
 
 	// Copy the header unencrypted.

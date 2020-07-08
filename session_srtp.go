@@ -9,6 +9,8 @@ import (
 	"github.com/mudutv/rtp"
 )
 
+const defaultSessionSRTPReplayProtectionWindow = 64
+
 // SessionSRTP implements io.ReadWriteCloser and provides a bi-directional SRTP session
 // SRTP itself does not have a design like this, but it is common in most applications
 // for local/remote to each have their own keying material. This provides those patterns
@@ -31,14 +33,28 @@ func NewSessionSRTP(conn net.Conn, config *Config) (*SessionSRTP, error) {
 		loggerFactory = logging.NewDefaultLoggerFactory()
 	}
 
+	localOpts := append(
+		[]ContextOption{},
+		config.LocalOptions...,
+	)
+	remoteOpts := append(
+		[]ContextOption{
+			// Default options
+			SRTPReplayProtection(defaultSessionSRTPReplayProtectionWindow),
+		},
+		config.RemoteOptions...,
+	)
+
 	s := &SessionSRTP{
 		session: session{
-			nextConn:    conn,
-			readStreams: map[uint32]readStream{},
-			newStream:   make(chan readStream),
-			started:     make(chan interface{}),
-			closed:      make(chan interface{}),
-			log:         loggerFactory.NewLogger("srtp"),
+			nextConn:      conn,
+			localOptions:  localOpts,
+			remoteOptions: remoteOpts,
+			readStreams:   map[uint32]readStream{},
+			newStream:     make(chan readStream),
+			started:       make(chan interface{}),
+			closed:        make(chan interface{}),
+			log:           loggerFactory.NewLogger("srtp"),
 		},
 	}
 	s.writeStream = &WriteStreamSRTP{s}
@@ -109,9 +125,9 @@ func (s *SessionSRTP) writeRTP(header *rtp.Header, payload []byte) (int, error) 
 	}
 
 	s.session.localContextMutex.Lock()
-	defer s.session.localContextMutex.Unlock()
-
 	encrypted, err := s.localContext.encryptRTP(nil, header, payload)
+	s.session.localContextMutex.Unlock()
+
 	if err != nil {
 		return 0, err
 	}
