@@ -1,12 +1,11 @@
 module github.com/mudutv/srtp
 
-go 1.12
+go 1.14
 
 require (
-	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/mudutv/logging v0.2.2
-	github.com/mudutv/rtcp v1.2.3
-	github.com/mudutv/rtp v1.5.5
-	github.com/mudutv/transport v0.10.0
+	github.com/mudutv/logging v0.2.3-0.20200713015708-31395b91b76b
+	github.com/mudutv/rtcp v1.2.2-0.20200713082714-d214eedcf11f
+	github.com/mudutv/rtp v1.1.5-0.20200714020244-c5b55fb036a9
+	github.com/mudutv/transport v0.8.11-0.20200713064300-06cc0a3076c7
 	github.com/stretchr/testify v1.6.1
 )

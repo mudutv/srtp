@@ -6,7 +6,6 @@ import (
 
 	"github.com/mudutv/rtp"
 	"github.com/mudutv/transport/packetio"
-	"context"
 )
 
 // Limit the buffer size to 1MB
@@ -71,9 +70,9 @@ func (r *ReadStreamSRTP) Read(buf []byte) (int, error) {
 }
 
 // miaobinwei
-func (r *ReadStreamSRTP) ReadContext(buf []byte,ctx context.Context) (int, error) {
-	return r.buffer.ReadContext(buf,ctx)
-}
+//func (r *ReadStreamSRTP) ReadContext(buf []byte,ctx context.Context) (int, error) {
+//	return r.buffer.ReadContext(buf,ctx)
+//}
 
 // ReadRTP reads and decrypts full RTP packet and its header from the nextConn
 func (r *ReadStreamSRTP) ReadRTP(buf []byte) (int, *rtp.Header, error) {

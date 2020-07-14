@@ -6,7 +6,6 @@ import (
 
 	"github.com/mudutv/rtcp"
 	"github.com/mudutv/transport/packetio"
-	"context"
 )
 
 // Limit the buffer size to 100KB
@@ -69,16 +68,16 @@ func (r *ReadStreamSRTCP) Read(buf []byte) (int, error) {
 }
 
 // miaobinwei
-func (r *ReadStreamSRTCP) ReadContext(b []byte, ctx context.Context) (int, error) {
-	n, err := r.buffer.ReadContext(b,ctx)
-
-	if err == packetio.ErrFull {
-		// Silently drop data when the buffer is full.
-		return len(b), nil
-	}
-
-	return n, err
-}
+//func (r *ReadStreamSRTCP) ReadContext(b []byte, ctx context.Context) (int, error) {
+//	n, err := r.buffer.ReadContext(b,ctx)
+//
+//	if err == packetio.ErrFull {
+//		// Silently drop data when the buffer is full.
+//		return len(b), nil
+//	}
+//
+//	return n, err
+//}
 
 // Close removes the ReadStream from the session and cleans up any associated state
 func (r *ReadStreamSRTCP) Close() error {
