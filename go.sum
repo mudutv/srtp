@@ -8,6 +8,10 @@ github.com/mudutv/rtp v1.1.5-0.20200714020244-c5b55fb036a9 h1:KNCZ0axUifv/EVCoTt
 github.com/mudutv/rtp v1.1.5-0.20200714020244-c5b55fb036a9/go.mod h1:Ysxwnt2dvJPLpqVr9vHxvnWvCviSDtO4haCLNpUhe9o=
 github.com/mudutv/transport v0.8.11-0.20200713064300-06cc0a3076c7 h1:k4kG2u6y++3m03waewoZGxLyvcalPL1hC/o7Pi1YaxA=
 github.com/mudutv/transport v0.8.11-0.20200713064300-06cc0a3076c7/go.mod h1:Brx2T3nSE5yN4+QQjK71hVr6PDenHxFlxdM1K0TSb7w=
+github.com/mudutv/transport v0.8.11-0.20200715081346-7cd9d8825b1b h1:KuqMN03t4Ii+3GmHDpysKG4pzgw12sLgjwJxLdSYur4=
+github.com/mudutv/transport v0.8.11-0.20200715081346-7cd9d8825b1b/go.mod h1:Brx2T3nSE5yN4+QQjK71hVr6PDenHxFlxdM1K0TSb7w=
+github.com/mudutv/transport v1.3.0 h1:Ixj2Gnyl0Ql4LU5yyLFzygldp4OAJZ42NJvhzGPltSY=
+github.com/mudutv/transport v1.3.0/go.mod h1:Brx2T3nSE5yN4+QQjK71hVr6PDenHxFlxdM1K0TSb7w=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
