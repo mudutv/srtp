@@ -6,6 +6,7 @@ import (
 
 	"github.com/mudutv/rtcp"
 	"github.com/mudutv/transport/packetio"
+
 	"context"
 )
 
@@ -59,26 +60,13 @@ func (r *ReadStreamSRTCP) ReadRTCP(buf []byte) (int, *rtcp.Header, error) {
 
 // Read reads and decrypts full RTCP packet from the nextConn
 func (r *ReadStreamSRTCP) Read(buf []byte) (int, error) {
-	n, err := r.buffer.Read(buf)
-	if err == packetio.ErrFull {
-		// Silently drop data when the buffer is full.
-		return len(buf), nil
-	}
-
-	return n, err
+	return r.buffer.Read(buf)
 }
 
 // miaobinwei
 func (r *ReadStreamSRTCP) ReadContext(buf []byte,ctx context.Context) (int, error) {
-	n, err := r.buffer.ReadContext(buf,ctx)
-	if err == packetio.ErrFull {
-		// Silently drop data when the buffer is full.
-		return len(buf), nil
-	}
-
-	return n, err
+	return r.buffer.ReadContext(buf,ctx)
 }
-
 
 // Close removes the ReadStream from the session and cleans up any associated state
 func (r *ReadStreamSRTCP) Close() error {
